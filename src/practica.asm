@@ -17,14 +17,15 @@ include macros.asm
     numopcion db 0
     signo db ?
     numero db 0
-    numero2 db 0
+    numeroFact db 1
     pedirNum BYTE "Ingrese numero: ",10,"$"
     pedirSigno BYTE "Ingrese un operador: ",10,"$"
     pedirMasSigno BYTE "Ingrese un operador o ';' para finalizar: ",10,"$"
-    signoMas BYTE 10,"suma ",10,"$" 
     resultao db 0
+    printResultado db "El resultado fue: ","$"
     u db 0
     d db 0
+    
 .code 
 
 main proc
@@ -68,22 +69,28 @@ main proc
 
         imprimir saltoLinea
         imprimir pedirNum
+
         getDato
         sub al, 30h
         mov d, al ; resultao = al 5
         getDato
         sub al, 30h
         mov u, al
-        
+        devolverDecimal u, d, resultao
         imprimir saltoLinea
         imprimir pedirSigno
         getDato
         mov signo, al ; signo = al
         imprimir saltoLinea
         imprimir pedirNum
+
         getDato
         sub al, 30h
-        mov numero, al ; numero = al 3
+        mov d, al ; resultao = al 5
+        getDato
+        sub al, 30h
+        mov u, al
+        devolverDecimal u, d, numero
         call funcionCalculadora
     factorial:
         call factorial
@@ -94,8 +101,40 @@ main proc
         int 21h
 main endp
 factorial proc
+        
         imprimir menuFactorial
-
+        getDato 
+        sub al, 30h
+        mov d, al ; resultao = al 5
+        getDato
+        sub al, 30h
+        mov u, al
+        cmp u, 0
+        je resultado        
+        mov cl, u
+        ciclo:
+            mov al, numeroFact ; 1
+            mov bl, cl         ; 2
+            mul bl
+            mov numeroFact, al
+        loop ciclo
+        resultado:
+            imprimir saltoLinea
+            imprimir printResultado
+            mov al, numeroFact
+            AAM  
+            mov bx, ax
+            mov ah, 02h
+            mov dl, bh
+            add dl, 30h
+            int 21h
+            mov ah,02h
+            mov dl,bl
+            add dl,30h
+            int 21h
+            imprimir saltoLinea
+            mov numeroFact, 1
+            call main
         jmp main
 factorial endp
 funcionCalculadora proc
@@ -111,43 +150,50 @@ funcionCalculadora proc
     masSignos: 
         imprimir saltoLinea
         imprimir pedirMasSigno
+
         getDato        
         mov signo, al
-
         cmp signo, 3Bh
         je resultado
 
         imprimir saltoLinea
         imprimir pedirNum
+
         getDato
         sub al, 30h
-        mov numero, al
+        mov d, al 
+        getDato
+        sub al, 30h
+        mov u, al
+        devolverDecimal u, d, numero
+
         jmp irSigno
     suma:
         mov al, resultao ; al = resultao
-        add al, numero  ; al = al + numero
+        adc al, numero  ; al = al + numero
         mov resultao, al  ; resultao = al resultao = 8
         jmp masSignos
     resta:
         mov al, resultao ; al = resultao
-        sub al, numero  ; al = al - numero
+        sbb al, numero  ; al = al - numero
         mov resultao, al  ; resultao = al
         jmp masSignos
     multiplicacion:
         mov al, resultao
         mov bl, numero
-        mul bl
+        imul bl
         mov resultao, al
         jmp masSignos
     division:
         xor ax, ax
         mov al, resultao
         mov bl, numero
-        div bl
+        idiv bl
         mov resultao, al
         jmp masSignos
     resultado:
         imprimir saltoLinea
+        imprimir printResultado
         mov al, resultao
         AAM  
         mov bx, ax
