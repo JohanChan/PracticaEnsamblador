@@ -14,9 +14,17 @@ include macros.asm
     menuFactorial BYTE 10,"Ingrese numero entre (00-04): ",10,"$"
     despedida BYTE 10,"Adios Vaquero!! ",10,"$"
     saltoLinea db " ",10,"$"
-    numopcion db ?
-    num db ?
-    resultadoFactorial db 1
+    numopcion db 0
+    signo db ?
+    numero db 0
+    numero2 db 0
+    pedirNum BYTE "Ingrese numero: ",10,"$"
+    pedirSigno BYTE "Ingrese un operador: ",10,"$"
+    pedirMasSigno BYTE "Ingrese un operador o ';' para finalizar: ",10,"$"
+    signoMas BYTE 10,"suma ",10,"$" 
+    resultao db 0
+    u db 0
+    d db 0
 .code 
 
 main proc
@@ -39,21 +47,44 @@ main proc
     ; lee dato escogido
     getDato
     mov numopcion, al
-
     cmp numopcion, 32h
     je calculadoraMode
-    cmp numopcion,33h
+    ; un comentario alv
+    cmp numopcion, 33h
     je factorial
-    cmp numopcion,35h
+
+    ; otro comentario alv
+    cmp numopcion, 35h
     je Salir
+
+    ; un ultimo comentario alv
     jmp menu
+
     ; fin de lectura
     
     cargarArchivo:
         jmp menu
     calculadoraMode:
-        imprimir prueba
-        jmp menu 
+
+        imprimir saltoLinea
+        imprimir pedirNum
+        getDato
+        sub al, 30h
+        mov d, al ; resultao = al 5
+        getDato
+        sub al, 30h
+        mov u, al
+        
+        imprimir saltoLinea
+        imprimir pedirSigno
+        getDato
+        mov signo, al ; signo = al
+        imprimir saltoLinea
+        imprimir pedirNum
+        getDato
+        sub al, 30h
+        mov numero, al ; numero = al 3
+        call funcionCalculadora
     factorial:
         call factorial
     Salir:
@@ -61,25 +92,75 @@ main proc
         mov ah, 4ch
         xor al, al
         int 21h
-
 main endp
 factorial proc
         imprimir menuFactorial
-        getDato
-        mov num, al
-        cmp al, 30h
-        mov cx,0
 
-        mov cx,3
-
-        ciclo:
-            mov al, resultadoFactorial
-            mov bl, cl
-            mul bl
-            mov resultadoFactorial, al
-        loop ciclo
-        imprimir resultadoFactorial
-        
         jmp main
 factorial endp
+funcionCalculadora proc
+    irSigno:
+        cmp signo, 2Bh
+        je suma
+        cmp signo, 2Dh
+        je resta
+        cmp signo, 2Ah
+        je multiplicacion
+        cmp signo, 2Fh
+        je division
+    masSignos: 
+        imprimir saltoLinea
+        imprimir pedirMasSigno
+        getDato        
+        mov signo, al
+
+        cmp signo, 3Bh
+        je resultado
+
+        imprimir saltoLinea
+        imprimir pedirNum
+        getDato
+        sub al, 30h
+        mov numero, al
+        jmp irSigno
+    suma:
+        mov al, resultao ; al = resultao
+        add al, numero  ; al = al + numero
+        mov resultao, al  ; resultao = al resultao = 8
+        jmp masSignos
+    resta:
+        mov al, resultao ; al = resultao
+        sub al, numero  ; al = al - numero
+        mov resultao, al  ; resultao = al
+        jmp masSignos
+    multiplicacion:
+        mov al, resultao
+        mov bl, numero
+        mul bl
+        mov resultao, al
+        jmp masSignos
+    division:
+        xor ax, ax
+        mov al, resultao
+        mov bl, numero
+        div bl
+        mov resultao, al
+        jmp masSignos
+    resultado:
+        imprimir saltoLinea
+        mov al, resultao
+        AAM  
+        mov bx, ax
+        mov ah, 02h
+        mov dl, bh
+        add dl, 30h
+        int 21h
+
+        mov ah,02h
+        mov dl,bl
+        add dl,30h
+        int 21h
+        imprimir saltoLinea
+        call main
+funcionCalculadora endp
 end main
