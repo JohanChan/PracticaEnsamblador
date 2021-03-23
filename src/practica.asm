@@ -25,7 +25,12 @@ include macros.asm
     printResultado db "El resultado fue: ","$"
     u db 0
     d db 0
-    
+    digito db 0
+    signoPor db " x ","$"
+    operaciones db "Operaciones: ","$"
+    signoIgual db "= ","$"
+    singoFact db "! ","$"
+    numeroCompleto db 3 dup("$")
 .code 
 
 main proc
@@ -66,31 +71,25 @@ main proc
     cargarArchivo:
         jmp menu
     calculadoraMode:
-
         imprimir saltoLinea
         imprimir pedirNum
-
-        getDato
-        sub al, 30h
-        mov d, al ; resultao = al 5
-        getDato
-        sub al, 30h
-        mov u, al
-        devolverDecimal u, d, resultao
+        limpiar numeroCompleto, SIZEOF numeroCompleto, 24h
+        obtenerCadena numeroCompleto
+        imprimir numeroCompleto
+        obtenerNumero numeroCompleto
+        mov resultao, al
+        limpiar numeroCompleto, SIZEOF numeroCompleto,24h 
         imprimir saltoLinea
         imprimir pedirSigno
         getDato
         mov signo, al ; signo = al
         imprimir saltoLinea
         imprimir pedirNum
-
-        getDato
-        sub al, 30h
-        mov d, al ; resultao = al 5
-        getDato
-        sub al, 30h
-        mov u, al
-        devolverDecimal u, d, numero
+        obtenerCadena numeroCompleto
+        obtenerNumero numeroCompleto
+        mov numero, al
+        imprimir numeroCompleto
+        limpiar numeroCompleto, SIZEOF numeroCompleto,24h 
         call funcionCalculadora
     factorial:
         call factorial
@@ -101,12 +100,12 @@ main proc
         int 21h
 main endp
 factorial proc
-        
         imprimir menuFactorial
         getDato 
         sub al, 30h
         mov d, al ; resultao = al 5
         getDato
+        mov u, al
         sub al, 30h
         mov u, al
         cmp u, 0
@@ -118,7 +117,22 @@ factorial proc
             mul bl
             mov numeroFact, al
         loop ciclo
+        imprimir saltoLinea
+        imprimir operaciones
+        imprimirDigito:
+            cmp cl, u
+            ja resultado
+            mov digito, cl
+            mov ah, 02h
+            mov dl, digito
+            add dl, 30h
+            int 21h
+            inc cl
+            imprimir singoFact
+            imprimir signoPor
+            jmp imprimirDigito
         resultado:
+            
             imprimir saltoLinea
             imprimir printResultado
             mov al, numeroFact
@@ -191,21 +205,11 @@ funcionCalculadora proc
         idiv bl
         mov resultao, al
         jmp masSignos
-    resultado:
+    resultado:        
         imprimir saltoLinea
         imprimir printResultado
-        mov al, resultao
-        AAM  
-        mov bx, ax
-        mov ah, 02h
-        mov dl, bh
-        add dl, 30h
-        int 21h
-
-        mov ah,02h
-        mov dl,bl
-        add dl,30h
-        int 21h
+        IntToString resultao, numeroCompleto
+        imprimir numeroCompleto
         imprimir saltoLinea
         call main
 funcionCalculadora endp
